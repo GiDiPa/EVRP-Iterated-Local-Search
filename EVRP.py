@@ -2,6 +2,7 @@ import math
 import sys
 import gc
 from dataclasses import dataclass
+import numpy as np
 
 
 node_list = []
@@ -63,7 +64,7 @@ def compute_distances():
 '''
 
 def generate_2D_matrix(n,m):
-  matrix = [[0.0 for x in range(n)] for y in range(m)]
+  matrix = np.zeros((n,m))
   return matrix
 
 
@@ -228,27 +229,29 @@ def check_solution(t, size):
   capacity_temp = maxCapacity
   distance_temp = 0.0
 
-  for i in size-1:
+  for i in range(size-1):
     ffrom = t[i]
     to = t[i+1]
-    capacity_temp -= get_customer_demand(to)
+    capacity_temp = capacity_temp - int(get_customer_demand(to)[1])
     energy_temp -= get_energy_consumption(ffrom,to)
     distance_temp += get_distance(ffrom,to)
 
     if capacity_temp < 0.0:
-      print("error: capacity below 0 at customer " + to)
-      print_solution(t,size)
-      exit
+      #print("error: capacity below 0 at customer " + str(to))
+      #print_solution(t,size)
+      return False
     if energy_temp < 0.0:
-      print("error: energy below 0 from " + ffrom + " to " + to)
-      print_solution(t,size)
-      exit
+      #print("error: energy below 0 from " + str(ffrom) + " to " + str(to))
+      #print_solution(t,size)
+      return False
     if to == Depot:
       capacity_temp = maxCapacity
     if is_charging_station(to) == True or to == Depot:
       energy_temp = batteryCapacity
   if distance_temp != fitness_evaluation(t,size):
     print("error: check fitness evaluation")
+    return False
+  return True
 
 
 '''
@@ -305,7 +308,7 @@ def is_charging_station(node):
 '''
 
 def get_current_best():
-  return current_best;
+  return current_best
 
 '''
 /*******************************************************************/

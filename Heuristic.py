@@ -22,6 +22,9 @@ def init_heuristic():
   global best_sol
   best_sol = Solution(tour=[None for x in range(EVRP.numOfCustomers + 1000)],id = 1, steps = 0, tour_length = sys.maxsize)
 
+def run_array_permutated(r):
+  random.shuffle(r)
+  return r
 
 '''
 Pseudo-codice della Greedy Randomized Search
@@ -40,7 +43,8 @@ endfor
 return BestSol,Best
 '''
 
-def run_heuristic():
+def run_heuristic(shuffle_array):
+  '''
   hhelp, oobject, tot_assigned, ffrom, to, charging_station = 0, 0, 0, 0, 0, 0
   r = []
   energy_temp = 0.0
@@ -55,6 +59,11 @@ def run_heuristic():
     r[i] = r[i+oobject]
     r[i+oobject] = hhelp
     tot_assigned += 1
+  '''
+  ffrom, to, charging_station = 0, 0, 0
+  energy_temp = 0.0
+  capacity_temp = 0.0
+
   best_sol.steps = 0
   best_sol.tour_length = sys.maxsize
   best_sol.tour[0] = EVRP.Depot
@@ -63,7 +72,7 @@ def run_heuristic():
   i = 0
   while i < EVRP.numOfCustomers:
     ffrom = best_sol.tour[best_sol.steps - 1]
-    to = r[i]
+    to = shuffle_array[i]
     if capacity_temp + float(EVRP.get_customer_demand(to)[1]) <= EVRP.maxCapacity and energy_temp + EVRP.get_energy_consumption(ffrom,to) <= EVRP.batteryCapacity:
       capacity_temp += float(EVRP.get_customer_demand(to)[1])
       energy_temp += EVRP.get_energy_consumption(ffrom,to)
@@ -92,9 +101,9 @@ def run_heuristic():
       best_sol.steps += 1
   best_sol.tour_length = EVRP.fitness_evaluation(best_sol.tour, best_sol.steps)
 
-  del r
+  #del r
   
-  gc.collect()
+  #gc.collect()
 
 def free_heuristic():
   del best_sol.tour

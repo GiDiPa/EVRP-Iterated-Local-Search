@@ -44,13 +44,20 @@ def main():
   EVRP.read_problem(problem_instance)
 
   Stats.open_stats(problem_instance)
+  #initialize the array of customers including depot
+  init_array = []
+  for i in range(EVRP.numOfCustomers + 1):
+    init_array.append(i)
+  
+  #check 
 
   for run in range(Stats.maxTrials):
     start_run(run+1)
     Heuristic.init_heuristic()
-
     while not(termination_condition()):
-      Heuristic.run_heuristic()
+      run_array_permutated = Heuristic.run_array_permutated(init_array)
+      if (EVRP.check_solution(run_array_permutated, EVRP.numOfCustomers)):
+        Heuristic.run_heuristic(run_array_permutated)
     '''implement print_solution or/and check_solution'''
     end_run(run)
   
