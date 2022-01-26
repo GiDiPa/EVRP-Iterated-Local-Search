@@ -1,4 +1,3 @@
-
 import random
 from dataclasses import dataclass
 import EVRP
@@ -23,8 +22,10 @@ def init_heuristic():
   best_sol = Solution(tour=[None for x in range(EVRP.numOfCustomers + 1000)],id = 1, steps = 0, tour_length = sys.maxsize)
 
 def run_array_permutated(r):
-  random.shuffle(r)
-  return r
+  r_copy = r
+  random.seed()
+  random.shuffle(r_copy)
+  return r_copy
 
 '''
 Pseudo-codice della Greedy Randomized Search
@@ -43,7 +44,7 @@ endfor
 return BestSol,Best
 '''
 
-def run_heuristic(shuffle_array):
+def run_heuristic(customer_shuffle_list,stations_list):
   '''
   hhelp, oobject, tot_assigned, ffrom, to, charging_station = 0, 0, 0, 0, 0, 0
   r = []
@@ -60,7 +61,7 @@ def run_heuristic(shuffle_array):
     r[i+oobject] = hhelp
     tot_assigned += 1
   '''
-  ffrom, to, charging_station = 0, 0, 0
+  
   energy_temp = 0.0
   capacity_temp = 0.0
 
@@ -68,11 +69,11 @@ def run_heuristic(shuffle_array):
   best_sol.tour_length = sys.maxsize
   best_sol.tour[0] = EVRP.Depot
   best_sol.steps += 1
-
+  vehicles = EVRP.vehicles
   i = 0
   while i < EVRP.numOfCustomers:
     ffrom = best_sol.tour[best_sol.steps - 1]
-    to = shuffle_array[i]
+    to = customer_shuffle_list[i]
     if capacity_temp + float(EVRP.get_customer_demand(to)[1]) <= EVRP.maxCapacity and energy_temp + EVRP.get_energy_consumption(ffrom,to) <= EVRP.batteryCapacity:
       capacity_temp += float(EVRP.get_customer_demand(to)[1])
       energy_temp += EVRP.get_energy_consumption(ffrom,to)
@@ -84,26 +85,39 @@ def run_heuristic(shuffle_array):
       energy_temp = 0.0
       best_sol.tour[best_sol.steps] = EVRP.Depot
       best_sol.steps += 1
+      
     elif energy_temp + float(EVRP.get_energy_consumption(ffrom,to)) > EVRP.batteryCapacity:
-      charging_station = random.randint(0, float(EVRP.actualProblemSize - (EVRP.numOfCustomers-1)) + float(EVRP.numOfCustomers - 1)-1)  
-      if EVRP.is_charging_station(charging_station) == True:
+      #charging_station = random.randint(0, float(EVRP.actualProblemSize - (EVRP.numOfCustomers-1)) + float(EVRP.numOfCustomers - 1)-1)  
+      tempFlag = False #flag for check if I can go to any of chargingStation
+      for station in stations_list:
+        if energy_temp + float(EVRP.get_energy_consumption(ffrom,station)) <= EVRP.batteryCapacity:
+           tempFlag = True
+           break
+      if tempFlag:
+        minPath = sys.maxsize
+        for station in stations_list:
+          from_station = float(EVRP.get_energy_consumption(ffrom,station))
+          station_to = float(EVRP.get_energy_consumption(station,to))
+          if energy_temp + float(EVRP.get_energy_consumption(ffrom,station)) <= EVRP.batteryCapacity:
+            if from_station + station_to < minPath:
+              minPath = from_station + station_to
+              minPathCommonStation = station
+      #if EVRP.is_charging_station(charging_station) == True:
         energy_temp = 0.0
-        best_sol.tour[best_sol.steps] = charging_station
+        best_sol.tour[best_sol.steps] = minPathCommonStation
         best_sol.steps += 1
-    else:
-      capacity_temp = 0.0
-      energy_temp = 0.0
-      best_sol.tour[best_sol.steps] = EVRP.Depot
-      best_sol.steps += 1
-    
-    if best_sol.tour[best_sol.steps - 1] != EVRP.Depot:
-      best_sol.tour[best_sol.steps] = EVRP.Depot
-      best_sol.steps += 1
+      else:
+        capacity_temp = 0.0
+        energy_temp = 0.0
+        best_sol.tour[best_sol.steps] = EVRP.Depot
+        best_sol.steps += 1
+        
+        
+  if best_sol.tour[best_sol.steps - 1] != EVRP.Depot:
+    best_sol.tour[best_sol.steps] = EVRP.Depot
+    best_sol.steps += 1
   best_sol.tour_length = EVRP.fitness_evaluation(best_sol.tour, best_sol.steps)
-
-  #del r
-  
-  #gc.collect()
+  return best_sol
 
 def free_heuristic():
   del best_sol.tour

@@ -19,7 +19,7 @@ optimum = 0
 numOfStations = 0
 batteryCapacity = 0
 maxCapacity = 0
-minVehicles = 0
+vehicles = 0
 
 evals = 0.0
 current_best = 0.0
@@ -80,7 +80,7 @@ def generate_2D_matrix(n,m):
 def read_problem(bench):
   global problem_size
   global maxCapacity
-  global minVehicles
+  global vehicles
   global batteryCapacity
   global energy_consumption
   global numOfStations
@@ -121,7 +121,7 @@ def read_problem(bench):
         print('Error on Vehicles')
         exit()
       else:
-        minVehicles = int(line.split(':')[1].strip())
+        vehicles = int(line.split(':')[1].strip())
     elif "ENERGY_CONSUMPTION" in line:
       if line.split(':')[1].strip() == 0 or line.split(':')[1].strip() is None:
         print('Error on ENERGY_CONSUMPTION')
@@ -359,7 +359,7 @@ bench = open('Benchmarks/bench1.evrp', 'r')
 read_problem(bench)
 print(problem_size)
 print(maxCapacity)
-print(minVehicles)
+print(vehicles)
 print(batteryCapacity)
 print(energy_consumption)
 print(numOfStations)
