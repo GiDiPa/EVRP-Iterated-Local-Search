@@ -228,7 +228,6 @@ def check_solution(t, size):
   energy_temp = batteryCapacity
   capacity_temp = maxCapacity
   distance_temp = 0.0
-
   for i in range(size-1):
     ffrom = t[i]
     to = t[i+1]
@@ -244,10 +243,12 @@ def check_solution(t, size):
       #print("error: energy below 0 from " + str(ffrom) + " to " + str(to))
       #print_solution(t,size)
       return False
-    if to == Depot:
-      capacity_temp = maxCapacity
-    if is_charging_station(to) == True or to == Depot:
-      energy_temp = batteryCapacity
+    if is_charging_station(to) == True:
+      if to == Depot:
+        capacity_temp = maxCapacity
+        energy_temp = batteryCapacity
+      else:
+        energy_temp = batteryCapacity
   if distance_temp != fitness_evaluation(t,size):
     print("error: check fitness evaluation")
     return False

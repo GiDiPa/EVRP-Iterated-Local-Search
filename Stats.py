@@ -4,7 +4,7 @@ import gc
 import os
 import datetime
 
-maxTrials = 20
+maxTrials = 30
 log_performance = []
 perfOfTrials = []
 

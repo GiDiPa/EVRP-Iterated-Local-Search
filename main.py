@@ -1,9 +1,9 @@
-from sys import flags
+import sys
 import EVRP
 import Heuristic
 import Stats
 import random
-
+import copy
 
 '''
 /*initialiazes a run for your heuristic*/
@@ -20,20 +20,66 @@ def start_run(r):
 '''
 
 def end_run(r):
-  Stats.get_mean(r,EVRP.get_current_best())
-  print("End of run " + str(r+1) + " with best solution quality " + str(EVRP.get_current_best()) + " total evaluations: " + str(EVRP.get_evals()))
+  if EVRP.get_current_best == sys.maxsize:
+    print("End of run " + str(r+1) + " with no solution.  Total evaluations: " + str(EVRP.get_evals()))
+  else:
+    Stats.get_mean(r,EVRP.get_current_best())
+    print("End of run " + str(r+1) + " with best solution quality " + str(EVRP.get_current_best()) + " total evaluations: " + str(EVRP.get_evals()))
 
 '''
 /*sets the termination conidition for your heuristic*/
 '''
 def termination_condition():
-  if EVRP.get_evals() >= 2000:
+  if EVRP.get_evals() >= 6000:
     flag = True
   else:
     flag = False
   return flag
 
 
+'''
+/* prepare data and launch run heuristic
+'''
+
+def prepare_and_launch():
+  customers_list = []
+  bestPaths = set()
+  for i in range(EVRP.numOfCustomers + 1):
+    customers_list.append(i)
+  #remove Depot
+  customers_list.remove(0)
+  #array of Stations to pass
+  stations_list = [x for x in range(len(EVRP.cust_demand) - EVRP.numOfStations, len(EVRP.cust_demand))]
+  stations_list.append(0)
+  print(stations_list)
+  print(EVRP.cust_demand)
+  firstRun = True
+  for run in range(Stats.maxTrials):
+    start_run(run+1)
+    if firstRun:
+      firstRun = False
+      best_solution = Heuristic.init_heuristic()
+      best_solution = Heuristic.run_heuristic(customers_list,stations_list,best_solution)
+      if not (EVRP.check_solution(best_solution.tour, best_solution.steps)):
+        best_solution = Heuristic.init_heuristic()
+        EVRP.init_current_best()
+        best_path_temp = []
+      else:
+        best_path_temp = customers_list.copy()
+    while not(termination_condition()):
+      best_sol_temp = Heuristic.init_heuristic()
+      run_array_permutated = Heuristic.run_array_permutated(customers_list.copy())  
+      #run_array_permutated = [15,16,14,1,8,11,12,20,9,13,21,4,19,10,2,3,18,6,17,7,5]
+      best_sol_temp = Heuristic.run_heuristic(run_array_permutated,stations_list,best_sol_temp)
+      if (EVRP.check_solution(best_sol_temp.tour, best_sol_temp.steps)):
+        if best_sol_temp.tour_length < best_solution.tour_length:
+          best_solution = best_sol_temp
+          best_path_temp = run_array_permutated.copy()
+    end_run(run)
+    best_path = best_path_temp.copy()
+    bestPaths.add(tuple(best_path))
+  return bestPaths
+    
 '''
 /****************************************************************/
 /*                Main Function                                 */
@@ -45,31 +91,8 @@ def main():
 
   Stats.open_stats(problem_instance)
   #initialize the array of customers including depot
-  customers_list = []
-  for i in range(EVRP.numOfCustomers + 1):
-    customers_list.append(i)
-  #remove Depot
-  customers_list.remove(0)
-  #array of Stations to pass
-  stations_list = [x for x in range(len(EVRP.cust_demand) - EVRP.numOfStations, len(EVRP.cust_demand))]
-  print(stations_list)
-  print(EVRP.cust_demand)
-  for run in range(Stats.maxTrials):
-    start_run(run+1)
-    Heuristic.init_heuristic()
-    while not(termination_condition()):
-      run_array_permutated = Heuristic.run_array_permutated(customers_list)
-      #print(run_array_permutated)
-      best_sol_temp = Heuristic.run_heuristic(run_array_permutated,stations_list)
-      realLenTour = 0
-      for i in best_sol_temp.tour:
-        if i is None:
-          break
-        realLenTour += 1
-      if (EVRP.check_solution(best_sol_temp.tour, best_sol_temp.steps)):
-        best_sol = best_sol_temp
-    '''implement print_solution or/and check_solution'''
-    end_run(run)
+  bestSolutionFromMaxTrial = prepare_and_launch()
+  print (bestSolutionFromMaxTrial)
   
   Stats.close_stats()
 
