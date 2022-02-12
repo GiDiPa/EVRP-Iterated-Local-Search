@@ -4,14 +4,16 @@ import gc
 import os
 import datetime
 
-maxTrials = 30
+maxTrials = 0
 log_performance = []
 perfOfTrials = []
 
 '''Used to output offline performance and population diversity'''
-def open_stats(probInstName):
+def open_stats(probInstName,numTrials):
   global perfOfTrials
   global log_performance
+  global maxTrials
+  maxTrials = numTrials
   log_performance = open('Benchmarks/Stats/stats-' + os.path.basename(probInstName.name) + '.txt', 'a')
   perfOfTrials = [0.0 for x in range(maxTrials)]
   if log_performance == None:

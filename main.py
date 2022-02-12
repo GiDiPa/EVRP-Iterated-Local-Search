@@ -1,8 +1,10 @@
+import argparse
 import sys
 import EVRP
 import Heuristic
 import Stats
 import random
+import argparse
 import copy
 
 '''
@@ -29,8 +31,8 @@ def end_run(r):
 '''
 /*sets the termination conidition for your heuristic*/
 '''
-def termination_condition():
-  if EVRP.get_evals() >= 6000:
+def termination_condition(numEvals):
+  if EVRP.get_evals() >= 2000:
     flag = True
   else:
     flag = False
@@ -41,7 +43,7 @@ def termination_condition():
 /* prepare data and launch run heuristic
 '''
 
-def prepare_and_launch():
+def prepare_and_launch(numEvals):
   customers_list = []
   bestPaths = set()
   for i in range(EVRP.numOfCustomers + 1):
@@ -50,7 +52,7 @@ def prepare_and_launch():
   customers_list.remove(0)
   #array of Stations to pass
   stations_list = [x for x in range(len(EVRP.cust_demand) - EVRP.numOfStations, len(EVRP.cust_demand))]
-  stations_list.append(0)
+  #stations_list.append(0)
   print(stations_list)
   print(EVRP.cust_demand)
   firstRun = True
@@ -66,7 +68,7 @@ def prepare_and_launch():
         best_path_temp = []
       else:
         best_path_temp = customers_list.copy()
-    while not(termination_condition()):
+    while not(termination_condition(numEvals)):
       best_sol_temp = Heuristic.init_heuristic()
       run_array_permutated = Heuristic.run_array_permutated(customers_list.copy())  
       #run_array_permutated = [15,16,14,1,8,11,12,20,9,13,21,4,19,10,2,3,18,6,17,7,5]
@@ -76,8 +78,15 @@ def prepare_and_launch():
           best_solution = best_sol_temp
           best_path_temp = run_array_permutated.copy()
     end_run(run)
-    best_path = best_path_temp.copy()
-    bestPaths.add(tuple(best_path))
+  best_path = best_path_temp.copy()
+  best_tourlength = []
+  bestTourPath = []
+  best_tourlength.append(best_solution.tour_length)
+  for i in range(0,best_solution.steps):
+    bestTourPath.append(best_solution.tour[i])
+  bestPaths.add(tuple(best_path))
+  bestPaths.add(tuple(bestTourPath))
+  bestPaths.add(tuple(best_tourlength))
   return bestPaths
     
 '''
@@ -86,12 +95,16 @@ def prepare_and_launch():
 /****************************************************************/
 '''
 def main():
-  problem_instance = open('Benchmarks/bench1.evrp', 'r')
+  problem_instance = open('Benchmarks/bench3.evrp', 'r')
+  parser = argparse.ArgumentParser()
+  parser.add_argument('--numEvals', type=int, required=True)
+  parser.add_argument('--maxTrials',type = int, required=True)
+  args = parser.parse_args()
   EVRP.read_problem(problem_instance)
 
-  Stats.open_stats(problem_instance)
-  #initialize the array of customers including depot
-  bestSolutionFromMaxTrial = prepare_and_launch()
+  Stats.open_stats(problem_instance,args.maxTrials)
+  #initialize the array of customers including depotp
+  bestSolutionFromMaxTrial = prepare_and_launch(args.numEvals)
   print (bestSolutionFromMaxTrial)
   
   Stats.close_stats()
