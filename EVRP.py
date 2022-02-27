@@ -225,10 +225,13 @@ def print_solution(routes, size):
 '''
 
 def check_solution(t, size):
+  checkDepotReturn = 0
   energy_temp = batteryCapacity
   capacity_temp = maxCapacity
   distance_temp = 0.0
   for i in range(size-1):
+    if t[i+1] == 0:
+      checkDepotReturn += 1
     ffrom = t[i]
     to = t[i+1]
     capacity_temp = capacity_temp - int(get_customer_demand(to)[1])
@@ -251,6 +254,9 @@ def check_solution(t, size):
         energy_temp = batteryCapacity
   if distance_temp != fitness_evaluation(t,size):
     print("error: check fitness evaluation")
+    return False
+  elif checkDepotReturn > vehicles + 1:
+    #print("error: too many travel to depot")
     return False
   return True
 
