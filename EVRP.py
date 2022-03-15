@@ -24,6 +24,8 @@ vehicles = 0
 evals = 0.0
 current_best = 0.0
 
+exceedVehicles = False
+
 @dataclass
 class Node:
     id: int
@@ -225,6 +227,8 @@ def print_solution(routes, size):
 '''
 
 def check_solution(t, size):
+  global exceedVehicles
+  exceedVehicles = False
   checkDepotReturn = 0
   energy_temp = batteryCapacity
   capacity_temp = maxCapacity
@@ -256,8 +260,9 @@ def check_solution(t, size):
     print("error: check fitness evaluation")
     return False
   elif checkDepotReturn > vehicles + 1:
+    exceedVehicles = True
     #print("error: too many travel to depot")
-    return False
+  #  return False
   return True
 
 

@@ -1,12 +1,13 @@
 import argparse
 import sys
 
-from numpy import empty
+from numpy import empty, percentile
 import EVRP
 import Heuristic
 import Stats
 import random
 import argparse
+import math
 import copy
 
 '''
@@ -100,6 +101,41 @@ def swapPositions(list, pos1, pos2):
     list[pos1], list[pos2] = list[pos2], list[pos1]
     return list
 
+def couplesList(pathToSwap,numEvals):
+  percKvariance = EVRP.get_evals()
+  #variate the couples of swap while numEvals is increasing
+  if percKvariance <= int(math.ceil((numEvals * 25 ) / 100)):
+    percK = int(math.ceil((len(pathToSwap) * 20 ) / 100))
+  elif percKvariance <= int(math.ceil((numEvals * 50 ) / 100)):
+    percK = int(math.ceil((len(pathToSwap) * 15 ) / 100))
+  elif percKvariance <= int(math.ceil((numEvals * 75 ) / 100)):
+    percK = int(math.ceil((len(pathToSwap) * 10 ) / 100))
+  else:
+    percK = int(math.ceil((len(pathToSwap) * 5 ) / 100))
+  
+  #if percKvariance 
+  
+  if percK % 2 != 0:
+    percK += 1
+  coupleSwap = []
+  for i in range(percK):
+    flagSwap = True
+    if not coupleSwap:
+      randomN = random.randint(0, len(pathToSwap) - 1)
+      coupleSwap.append(randomN)
+    else:
+      while flagSwap:
+        randomN = random.randint(0, len(pathToSwap) - 1)
+        if randomN not in coupleSwap:
+          coupleSwap.append(randomN)
+          flagSwap = False
+  i = 0
+  while i < percK:
+    pathToSwap = swapPositions(pathToSwap,coupleSwap[i],coupleSwap[i+1])
+    i = i + 2
+  return pathToSwap
+
+
 def randomLocalSearch(randomBestSolution,numEvals):
   bestSol = []
   bestFitness = randomBestSolution[1]
@@ -109,21 +145,10 @@ def randomLocalSearch(randomBestSolution,numEvals):
     #print(bestFitness)
     #input('go on')
     start_run(run+1)
+    random.seed()
     while not(termination_condition(numEvals)):
       best_sol_temp = Heuristic.init_heuristic()
-      flagSwap = True
-      while flagSwap:
-        random1 = random.randint(0, len(bestPath) - 1)
-        random2 = random.randint(0, len(bestPath) - 1)
-        #print(random1,random2)
-        if random1 != random2:
-          flagSwap = False
-      
-      pathTemp = bestPath.copy()
-      pathTemp = swapPositions(pathTemp,random1,random2)
-      #print(bestPath,pathTemp)
-
-      #run_array_permutated = [15,16,14,1,8,11,12,20,9,13,21,4,19,10,2,3,18,6,17,7,5]
+      pathTemp = couplesList(bestPath.copy(),numEvals)
       best_sol_temp = Heuristic.run_heuristic(pathTemp,stations_list,best_sol_temp)
       if (EVRP.check_solution(best_sol_temp.tour, best_sol_temp.steps)):
         if best_sol_temp.tour_length < bestFitness:
@@ -134,14 +159,47 @@ def randomLocalSearch(randomBestSolution,numEvals):
   bestSol.append((bestFitness)) 
   return bestSol
 
-    
+
+def randomLocalSearch2(randomBestSolution,numEvals):
+  bestSol = []
+  bestFitness = randomBestSolution[1]
+  bestPath = randomBestSolution[0]
+  stations_list = [x for x in range(len(EVRP.cust_demand) - EVRP.numOfStations, len(EVRP.cust_demand))]
+  for run in range(Stats.maxTrials):
+    #print(bestFitness)
+    #input('go on')
+    start_run(run+1)
+    random.seed()
+    while not(termination_condition(numEvals)):
+      best_sol_temp = Heuristic.init_heuristic()
+      flagSwap = True
+      while flagSwap:
+        random.seed()
+        random1 = random.randint(0, len(bestPath) - 1)
+        random2 = random.randint(0, len(bestPath) - 1)
+        #print(random1,random2)
+        if random1 != random2:
+          flagSwap = False
+      
+      pathTemp = bestPath.copy()
+      pathTemp = swapPositions(pathTemp,random1,random2)
+      best_sol_temp = Heuristic.run_heuristic(pathTemp,stations_list,best_sol_temp)
+      if (EVRP.check_solution(best_sol_temp.tour, best_sol_temp.steps)):
+        if best_sol_temp.tour_length < bestFitness:
+          bestFitness = best_sol_temp.tour_length
+          bestPath = pathTemp
+    end_run(run)
+  bestSol.append((bestPath))
+  bestSol.append((bestFitness)) 
+  return bestSol
+
 '''
 /****************************************************************/
 /*                Main Function                                 */
 /****************************************************************/
 '''
 def main():
-  problem_instance = open('Benchmarks/bench3.evrp', 'r')
+  problem_instance = open('Benchmarks/bench4.evrp', 'r')
   parser = argparse.ArgumentParser()
   parser.add_argument('--numEvals', type=int, required=True)
   parser.add_argument('--maxTrials',type = int, required=True)
@@ -162,7 +220,11 @@ def main():
     print(rLSSol) 
   else:
     rLSSol = randomLocalSearch(bestSolutionFromMaxTrial,args.numEvals)
-    print(rLSSol)      
+    print(rLSSol)
+  rLS2Sol = randomLocalSearch2(rLSSol,args.numEvals)
+  print(rLS2Sol)
+  if EVRP.exceedVehicles:
+    print('The solution exceeds the number of vehicles')      
   Stats.close_stats()
 
 if __name__ == "__main__":
