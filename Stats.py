@@ -62,6 +62,8 @@ def worstOfVector(values, l):
 
 def close_stats():
   global log_performance
+  log_performance.write("\n")
+  log_performance.write("#####################################################################\n")
   log_performance.write(str(datetime.datetime.now()) + ' Log\n\n')
   for i in range(maxTrials):
     log_performance.write(str(perfOfTrials[i]) + '\n')
@@ -71,7 +73,11 @@ def close_stats():
   log_performance.write(" Std Dev \t" + str(perfStdevValue) + '\n')
   log_performance.write("Min \t" + str(bestOfVector(perfOfTrials,maxTrials)) + '\n')
   log_performance.write("Max \t" + str(worstOfVector(perfOfTrials, maxTrials)) + '\n')
-
+  if EVRP.exceedVehicles:
+    log_performance.write("The Solution Exceed number of Vehicles at minimum result\n")
+  else:
+    log_performance.write("The Solution fits number of Vehicles at minimum result\n")  
+  log_performance.write("#####################################################################\n")
   log_performance.close()
 
 def free_stats():

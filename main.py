@@ -9,6 +9,7 @@ import random
 import argparse
 import math
 import copy
+import matplotlib.pyplot as plt
 
 '''
 /*initialiazes a run for your heuristic*/
@@ -188,10 +189,33 @@ def randomLocalSearch2(randomBestSolution,numEvals):
         if best_sol_temp.tour_length < bestFitness:
           bestFitness = best_sol_temp.tour_length
           bestPath = pathTemp
+          bestSteps = best_sol_temp.steps
+          bestTour = best_sol_temp.tour
     end_run(run)
+  EVRP.check_solution(bestTour, bestSteps)
+  bestTourToList = []
+  for i in range(0,bestSteps):
+    bestTourToList.append(bestTour[i])
   bestSol.append((bestPath))
-  bestSol.append((bestFitness)) 
+  bestSol.append((bestFitness))
+  bestSol.append((bestTourToList)) 
   return bestSol
+
+def plotSolution(solToPlot):
+  activeArcs = []
+  for i in range(len(solToPlot[2]) - 1):
+    activeArcs.append((solToPlot[2][i],solToPlot[2][i+1]))
+  for i,j in activeArcs:
+    plt.plot([int(EVRP.node_list[i].x),int(EVRP.node_list[j].x)],[int(EVRP.node_list[i].y),int(EVRP.node_list[j].y)],c='b',zorder = 0)
+  plt.plot(int(EVRP.node_list[0].x), int(EVRP.node_list[0].y), c='r', marker='s')
+  for i in range(EVRP.numOfCustomers + 1):
+    plt.scatter(int(EVRP.node_list[i].x), int(EVRP.node_list[i].y), c='b', s = 20)
+  for i in range(EVRP.numOfCustomers + 1, EVRP.actualProblemSize):
+    plt.scatter(int(EVRP.node_list[i].x), int(EVRP.node_list[i].y), c='g', marker='p', s = 80) 
+  #plt.scatter(int(EVRP.node_list[EVRP.numOfCustomers:].x), int(EVRP.node_list[EVRP.numOfCustomers:].y), c='g')  
+  plt.savefig('plot.png')
+  
+    
 
 '''
 /****************************************************************/
@@ -199,7 +223,7 @@ def randomLocalSearch2(randomBestSolution,numEvals):
 /****************************************************************/
 '''
 def main():
-  problem_instance = open('Benchmarks/bench4.evrp', 'r')
+  problem_instance = open('Benchmarks/bench1.evrp', 'r')
   parser = argparse.ArgumentParser()
   parser.add_argument('--numEvals', type=int, required=True)
   parser.add_argument('--maxTrials',type = int, required=True)
@@ -210,21 +234,16 @@ def main():
   bestSolutionFromMaxTrial = list(prepare_and_launch(args.numEvals))
   print (bestSolutionFromMaxTrial)
   #after found a random best solution, try a random local search
-  if not (bestSolutionFromMaxTrial[0] or bestSolutionFromMaxTrial[2]):
-    print("No solution found: Start the next solution with the original array")
-    #instead of restart from original array, take always the best solution(even if invalid) from the random array swap 
-    retryOriginalArr = []
-    retryOriginalArr.append((bestSolutionFromMaxTrial[3]))
-    retryOriginalArr.append(sys.maxsize)
-    rLSSol = randomLocalSearch(retryOriginalArr,args.numEvals)
-    print(rLSSol) 
-  else:
-    rLSSol = randomLocalSearch(bestSolutionFromMaxTrial,args.numEvals)
-    print(rLSSol)
-  rLS2Sol = randomLocalSearch2(rLSSol,args.numEvals)
+  #rLSSol = randomLocalSearch(bestSolutionFromMaxTrial,args.numEvals)
+  #print(rLSSol)
+  rLS2Sol = randomLocalSearch2(bestSolutionFromMaxTrial,args.numEvals)
   print(rLS2Sol)
+  plotSolution(rLS2Sol)
+  #print(EVRP.node_list)
   if EVRP.exceedVehicles:
-    print('The solution exceeds the number of vehicles')      
+    print('The solution exceeds the number of vehicles')
+  else:
+    print('The solution fits the number of vehicles')      
   Stats.close_stats()
 
 if __name__ == "__main__":
