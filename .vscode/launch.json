@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args": ["--numEvals" ,"2000", "--maxTrials", "100"]
+            "args": ["--maxTrials", "100", "--benchNo", "Benchmarks/bench1.evrp"]
         }
     ]
 }

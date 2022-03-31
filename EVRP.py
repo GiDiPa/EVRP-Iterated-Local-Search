@@ -25,6 +25,7 @@ evals = 0.0
 current_best = 0.0
 
 exceedVehicles = False
+numVehiclesUsed = 0
 
 @dataclass
 class Node:
@@ -227,8 +228,9 @@ def print_solution(routes, size):
 '''
 
 def check_solution(t, size):
-  global exceedVehicles
+  global exceedVehicles, numVehiclesUsed
   exceedVehicles = False
+  numVehiclesUsed = 0
   checkDepotReturn = 0
   energy_temp = batteryCapacity
   capacity_temp = maxCapacity
@@ -256,6 +258,7 @@ def check_solution(t, size):
         energy_temp = batteryCapacity
       else:
         energy_temp = batteryCapacity
+  numVehiclesUsed = checkDepotReturn
   if distance_temp != fitness_evaluation(t,size):
     print("error: check fitness evaluation")
     return False
@@ -276,7 +279,7 @@ def check_solution(t, size):
 
 def get_distance(ffrom, to):
   global evals
-  evals += (1.0/actualProblemSize)
+  #evals += (1.0/actualProblemSize)
   return distances[ffrom][to]
 
 '''
@@ -359,10 +362,7 @@ def init_evals():
 
 def free_EVRP():
   global node_list,cust_demand,charging_station,distances
-  del node_list,cust_demand,charging_station
-  for i in actualProblemSize:
-    del distances[i]
-  del distances
+  del node_list,cust_demand,charging_station,distances
 
   gc.collect()
 
