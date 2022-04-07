@@ -60,7 +60,7 @@ def worstOfVector(values, l):
   return mmax
 
 
-def close_stats(arr):
+def close_stats(arr,numEvals):
   global log_performance
   global perfOfTrials
   for i in range(len(arr)):
@@ -68,6 +68,7 @@ def close_stats(arr):
   log_performance.write("\n")
   log_performance.write("#####################################################################\n")
   log_performance.write(str(datetime.datetime.now()) + ' Log\n\n')
+  log_performance.write('#Evaluation per run:' + str(numEvals) +'\n')
   for i in range(maxTrials):
     log_performance.write(str(perfOfTrials[i]) + '\n')
   perfMeanValue = mean(perfOfTrials, maxTrials)
@@ -79,8 +80,9 @@ def close_stats(arr):
   if EVRP.exceedVehicles:
     log_performance.write("The Solution Exceed number of Vehicles at minimum result: " + str(EVRP.numVehiclesUsed) + " required!\n")
   else:
-    log_performance.write("The Solution fits number of Vehicles at minimum result: " + str(EVRP.numVehiclesUsed) + " required!\n")
-  log_performance.write(arr[0])  
+    log_performance.write("The Solution fits number of Vehicles at minimum result: " + str(EVRP.numVehiclesUsed) + " required!\n\n")
+  log_performance.write('Best Array Combination | Best Fitness | Best Path | Best number of Steps \n')
+  log_performance.write(str(arr[0]) + '\n')  
   log_performance.write("#####################################################################\n")
   log_performance.close()
 

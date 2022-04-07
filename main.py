@@ -15,6 +15,7 @@ from joblib import Parallel, delayed
 import os
 import datetime
 import gc
+import re
 
 '''
 /*initialiazes a run for your heuristic*/
@@ -65,27 +66,27 @@ def prepare_and_launch(numEvals):
   stations_list = [x for x in range(len(EVRP.cust_demand) - EVRP.numOfStations, len(EVRP.cust_demand))]
   #stations_list.append(0)
   firstRun = True
-  for run in range(Stats.maxTrials):
-    EVRP.init_evals()
-    if firstRun:
-      firstRun = False
+  
+  EVRP.init_evals()
+  if firstRun:
+    firstRun = False
+    best_solution = Heuristic.init_heuristic()
+    best_solution = Heuristic.run_heuristic(customers_list,stations_list,best_solution)
+    if not (EVRP.check_solution(best_solution.tour, best_solution.steps)):
       best_solution = Heuristic.init_heuristic()
-      best_solution = Heuristic.run_heuristic(customers_list,stations_list,best_solution)
-      if not (EVRP.check_solution(best_solution.tour, best_solution.steps)):
-        best_solution = Heuristic.init_heuristic()
-        EVRP.init_current_best()
-        best_path_temp = []
-      else:
-        best_path_temp = customers_list.copy()
-    while not(termination_condition(numEvals)):
-      best_sol_temp = Heuristic.init_heuristic()
-      run_array_permutated = Heuristic.run_array_permutated(customers_list.copy())  
-      #run_array_permutated = [15,16,14,1,8,11,12,20,9,13,21,4,19,10,2,3,18,6,17,7,5]
-      best_sol_temp = Heuristic.run_heuristic(run_array_permutated,stations_list,best_sol_temp)
-      if (EVRP.check_solution(best_sol_temp.tour, best_sol_temp.steps)):
-        if best_sol_temp.tour_length < best_solution.tour_length:
-          best_solution = best_sol_temp
-          best_path_temp = run_array_permutated.copy()
+      EVRP.init_current_best()
+      best_path_temp = []
+    else:
+      best_path_temp = customers_list.copy()
+  while not(termination_condition(numEvals)):
+    best_sol_temp = Heuristic.init_heuristic()
+    run_array_permutated = Heuristic.run_array_permutated(customers_list.copy())  
+    #run_array_permutated = [15,16,14,1,8,11,12,20,9,13,21,4,19,10,2,3,18,6,17,7,5]
+    best_sol_temp = Heuristic.run_heuristic(run_array_permutated,stations_list,best_sol_temp)
+    if (EVRP.check_solution(best_sol_temp.tour, best_sol_temp.steps)):
+      if best_sol_temp.tour_length < best_solution.tour_length:
+        best_solution = best_sol_temp
+        best_path_temp = run_array_permutated.copy()
   best_path = best_path_temp.copy()
   bestTourPath = []
   best_tourlength = float(best_solution.tour_length)
@@ -140,27 +141,32 @@ def couplesList(pathToSwap,numEvals):
   return pathToSwap
 
 '''
-def randomLocalSearch(randomBestSolution,numEvals):
+def randomLocalSearchCouples(randomBestSolution,numEvals):
   bestSol = []
   bestFitness = randomBestSolution[1]
   bestPath = randomBestSolution[0]
+  bestTour = randomBestSolution[2]
+  bestSteps = randomBestSolution[3]
   stations_list = [x for x in range(len(EVRP.cust_demand) - EVRP.numOfStations, len(EVRP.cust_demand))]
-  for run in range(Stats.maxTrials):
-    #print(bestFitness)
-    #input('go on')
-    start_run(run+1)
-    random.seed()
-    while not(termination_condition(numEvals)):
-      best_sol_temp = Heuristic.init_heuristic()
-      pathTemp = couplesList(bestPath.copy(),numEvals)
-      best_sol_temp = Heuristic.run_heuristic(pathTemp,stations_list,best_sol_temp)
-      if (EVRP.check_solution(best_sol_temp.tour, best_sol_temp.steps)):
-        if best_sol_temp.tour_length < bestFitness:
-          bestFitness = best_sol_temp.tour_length
-          bestPath = pathTemp
-    end_run(run)
+  
+  #print(bestFitness)
+  #input('go on')
+  EVRP.init_evals()
+  while not(termination_condition(numEvals)):
+    best_sol_temp = Heuristic.init_heuristic()
+    pathTemp = couplesList(bestPath.copy(),numEvals)
+    best_sol_temp = Heuristic.run_heuristic(pathTemp,stations_list,best_sol_temp)
+    if (EVRP.check_solution(best_sol_temp.tour, best_sol_temp.steps)):
+      if best_sol_temp.tour_length < bestFitness:
+        bestFitness = best_sol_temp.tour_length
+        bestPath = pathTemp
+  bestTourToList = []
+  for i in range(0,bestSteps):
+    bestTourToList.append(bestTour[i])
   bestSol.append((bestPath))
-  bestSol.append((bestFitness)) 
+  bestSol.append((bestFitness))
+  bestSol.append((bestTourToList))
+  bestSol.append((bestSteps)) 
   return bestSol
 '''
 
@@ -210,7 +216,7 @@ def definitiveIteratedLocalSearch(numEvals):
   bestSolTemp = []
   for run in range(Stats.maxTrials):
     start_run(run+1)
-    bestSolTemp = randomLocalSearch(bestSolutionRandomizedArray,numEvals)
+    bestSolTemp = randomLocalSearch(bestSol,numEvals)
     if bestSolTemp[1] < bestSol[1]:
       bestSol = bestSolTemp
     end_run(run,bestSol[1])
@@ -219,22 +225,23 @@ def definitiveIteratedLocalSearch(numEvals):
 
 def plotSolution(solToPlot,problem_instance):
   activeArcs = []
-  for i in range(len(solToPlot[2]) - 1):
-    activeArcs.append((solToPlot[2][i],solToPlot[2][i+1]))
-  for i,j in activeArcs:
-    plt.plot([int(EVRP.node_list[i].x),int(EVRP.node_list[j].x)],[int(EVRP.node_list[i].y),int(EVRP.node_list[j].y)],c='b',zorder = 0)
   plt.plot(int(EVRP.node_list[0].x), int(EVRP.node_list[0].y), c='r', marker='s')
   for i in range(EVRP.numOfCustomers + 1):
     plt.scatter(int(EVRP.node_list[i].x), int(EVRP.node_list[i].y), c='b', s = 20)
   for i in range(EVRP.numOfCustomers + 1, EVRP.actualProblemSize):
     plt.scatter(int(EVRP.node_list[i].x), int(EVRP.node_list[i].y), c='g', marker='p', s = 80) 
   #plt.scatter(int(EVRP.node_list[EVRP.numOfCustomers:].x), int(EVRP.node_list[EVRP.numOfCustomers:].y), c='g') 
-  plt.title(problem_instance)
+  plt.title(problem_instance.name)
   plt.xlabel("Fitness:" + str(solToPlot[1])) 
   ct = datetime.datetime.now()
   ts = ct.timestamp()
-  plt.savefig('Benchmarks/plots/' + os.path.basename(problem_instance.name) + '/' + os.path.basename(problem_instance.name) + str(ts) + 'plot.png')
-  
+  plt.savefig('Benchmarks/plots/' + os.path.basename(problem_instance.name) + '/' + os.path.basename(problem_instance.name) + str(ts) + 'plotwithoutroute.png')
+  for i in range(len(solToPlot[2]) - 1):
+    activeArcs.append((solToPlot[2][i],solToPlot[2][i+1]))
+  for i,j in activeArcs:
+    plt.plot([int(EVRP.node_list[i].x),int(EVRP.node_list[j].x)],[int(EVRP.node_list[i].y),int(EVRP.node_list[j].y)],c='b',zorder = 0)
+  plt.savefig('Benchmarks/plots/' + os.path.basename(problem_instance.name) + '/' + os.path.basename(problem_instance.name) + str(ts) + 'plotwithroute.png')
+
 def execute(problem_instance):
   #problem_instance = open('Benchmarks/bench1.evrp', 'r')
   parser = argparse.ArgumentParser()
@@ -242,7 +249,8 @@ def execute(problem_instance):
   parser.add_argument('--benchNo',type = str, required=True)
   args = parser.parse_args()
   EVRP.read_problem(problem_instance)
-  numEvals = 100 * EVRP.actualProblemSize
+  numEvalsInt = int(re.search(r'\d+', problem_instance.name).group()) * 10
+  numEvals = numEvalsInt * EVRP.actualProblemSize
   Stats.open_stats(problem_instance,args.maxTrials)
   iLSSol = definitiveIteratedLocalSearch(numEvals)
   #plotSolution(iLSSol,problem_instance)
@@ -277,7 +285,9 @@ def main():
   EVRP.read_problem(problem_instance)
   plotSolution(final[0],problem_instance)
   EVRP.check_solution(final[0][2], final[0][3])
-  Stats.close_stats(final_sorted_list)
+  numEvalsInt = int(re.search(r'\d+', problem_instance.name).group()) 
+  numEvals = numEvalsInt * 1000
+  Stats.close_stats(final_sorted_list,numEvals)
   
 
 if __name__ == "__main__":
